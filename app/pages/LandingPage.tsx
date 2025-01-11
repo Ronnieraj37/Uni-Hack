@@ -20,7 +20,6 @@ import {
   ArrowDownRight,
   LayoutDashboard,
   Settings,
-  Bell,
   UserCircle,
   PlusCircle,
   ShoppingBag,
@@ -49,8 +48,6 @@ const pieData = tokenBalances.map((token) => ({
 const COLORS = ["#6366F1", "#F59E0B", "#10B981"];
 
 const Dashboard = () => {
-  const [currentDate] = useState(new Date());
-  const [showSettings, setShowSettings] = useState(false);
   const [userType] = useState<"investor" | "user">("investor"); // You'll get this from your auth context
 
   return (
