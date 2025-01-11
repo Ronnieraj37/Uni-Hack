@@ -123,13 +123,43 @@ const PortfolioProtector: React.FC = () => {
         price: 0,
         duration: 60 * 60 * 24 * 30, // 30 days
       });
+      console.log("data set for renting");
 
       await iExecDataProtectorClient.sharing.rentProtectedData({
-        protectedData: protectedDataAddress,
+        protectedData: protectedDataResponse.address,
         price: 0,
         duration: 60 * 60 * 24 * 30, // 30 days
       });
       console.log("Rented data at 0 initially");
+
+      // Inside protectPortfolio function, when saving to database
+      const saveInvestmentResponse = await fetch("/api/investments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "wallet-address": window.ethereum.selectedAddress, // Add wallet address
+        },
+        body: JSON.stringify({
+          protectedDataAddress: protectedDataResponse.address,
+          collectionId: collection.collectionId,
+          name: `Investment Portfolio - ${new Date().toLocaleDateString()}`,
+          description: "Portfolio Strategy",
+          price: 0,
+          tokenAllocations: allocations.map(({ symbol, percentage }) => ({
+            token: symbol,
+            percentage,
+          })),
+        }),
+      });
+
+      const dbResponse = await saveInvestmentResponse.json();
+
+      // In protectPortfolio function, update the error handling
+      if (!saveInvestmentResponse.ok) {
+        const errorData = await saveInvestmentResponse.json();
+        console.error("API Error:", errorData);
+        throw new Error(errorData.error || "Failed to save investment");
+      }
 
       console.log(
         "Protected data set to renting",

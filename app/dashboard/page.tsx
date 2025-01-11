@@ -1,14 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
+import LandingPage from "../pages/LandingPage"; // Move your LandingPage component to components folder
 
-export default function Home() {
+export default function Dashboard() {
   const { isConnected, address } = useAccount();
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const verifyAuth = async () => {
       if (!isConnected || !address) {
         router.push("/login");
         return;
@@ -23,24 +24,17 @@ export default function Home() {
 
         const data = await response.json();
 
-        if (data.status === "AUTHENTICATED") {
-          router.push("/dashboard");
-        } else {
+        if (data.status !== "AUTHENTICATED") {
           router.push("/login");
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
+        console.error("Auth verification failed:", error);
         router.push("/login");
       }
     };
 
-    checkAuth();
+    verifyAuth();
   }, [isConnected, address, router]);
 
-  // Show loading while checking auth
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-  );
+  return <LandingPage />;
 }

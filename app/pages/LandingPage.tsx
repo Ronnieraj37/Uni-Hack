@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAccount } from "wagmi";
 import Link from "next/link";
 import {
   AreaChart,
@@ -48,8 +49,41 @@ const pieData = tokenBalances.map((token) => ({
 const COLORS = ["#6366F1", "#F59E0B", "#10B981"];
 
 const Dashboard = () => {
-  const [userType] = useState<"investor" | "user">("investor"); // You'll get this from your auth context
+  const { address, isConnected } = useAccount();
+  const [userType, setUserType] = useState<"investor" | "user" | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    const checkUserType = async () => {
+      try {
+        const response = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ address }),
+        });
+
+        const data = await response.json();
+
+        if (data.status === "AUTHENTICATED") {
+          setUserType(data.user.role.toLowerCase());
+        }
+      } catch (error) {
+        console.error("Failed to fetch user type:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkUserType();
+  }, [address, isConnected]);
+
+  if (isLoading || !userType) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -72,32 +106,6 @@ const Dashboard = () => {
                     className="w-64 pl-10 pr-4 py-2 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
-                <Link href="/">
-                  <button className="p-2 mx-3 rounded-lg hover:bg-gray-100 tooltip-wrapper">
-                    <LayoutDashboard className="h-5 w-5 text-gray-600" />
-                    <span className="tooltip">Dashboard</span>
-                  </button>
-                </Link>
-
-                <Link href="/invest">
-                  <button className="p-2 mx-3 rounded-lg hover:bg-gray-100 tooltip-wrapper">
-                    <LineChart className="h-5 w-5 text-gray-600" />
-                    <span className="tooltip">Investments</span>
-                  </button>
-                </Link>
-
-                <Link href="/profile">
-                  <button className="p-2 mx-3 rounded-lg hover:bg-gray-100 tooltip-wrapper">
-                    <UserCircle className="h-5 w-5 text-gray-600" />
-                    <span className="tooltip">Profile</span>
-                  </button>
-                </Link>
-
-                <button className="p-2 mx-3 rounded-lg hover:bg-gray-100 tooltip-wrapper">
-                  <Settings className="h-5 w-5 text-gray-600" />
-                  <span className="tooltip">Settings</span>
-                </button>
               </div>
             </div>
           </div>
@@ -109,34 +117,53 @@ const Dashboard = () => {
         <div className="mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {userType === "investor" ? (
-              <button className="p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-between group">
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    Create New Investment
-                  </h3>
-                  <p className="text-blue-100">Share your portfolio strategy</p>
+              <Link
+                href="/invest"
+                className="p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      Create New Investment
+                    </h3>
+                    <p className="text-blue-100">
+                      Share your portfolio strategy
+                    </p>
+                  </div>
+                  <PlusCircle className="h-6 w-6 hover:scale-110 transition-transform" />
                 </div>
-                <PlusCircle className="h-6 w-6 group-hover:scale-110 transition-transform" />
-              </button>
+              </Link>
             ) : (
-              <button className="p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-between group">
-                <div>
-                  <h3 className="text-lg font-semibold">Browse Investments</h3>
-                  <p className="text-blue-100">Discover winning portfolios</p>
+              <Link
+                href="/investments"
+                className="p-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      Browse Investments
+                    </h3>
+                    <p className="text-blue-100">Discover winning portfolios</p>
+                  </div>
+                  <ShoppingBag className="h-6 w-6 hover:scale-110 transition-transform" />
                 </div>
-                <ShoppingBag className="h-6 w-6 group-hover:scale-110 transition-transform" />
-              </button>
+              </Link>
             )}
 
-            <button className="p-4 bg-gray-800 text-white rounded-xl hover:bg-gray-900 transition-colors flex items-center justify-between group">
-              <div>
-                <h3 className="text-lg font-semibold">View Profile</h3>
-                <p className="text-gray-300">
-                  Manage your account and investments
-                </p>
+            <Link
+              href="/profile"
+              className="p-4 bg-gray-800 text-white rounded-xl hover:bg-gray-900 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">View Profile</h3>
+                  <p className="text-gray-300">
+                    Manage your account and investments
+                  </p>
+                </div>
+                <UserCircle className="h-6 w-6 hover:scale-110 transition-transform" />
               </div>
-              <UserCircle className="h-6 w-6 group-hover:scale-110 transition-transform" />
-            </button>
+            </Link>
           </div>
         </div>
         {/* Top Section */}
