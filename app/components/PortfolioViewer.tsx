@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { IExecDataProtector } from "@iexec/dataprotector";
 import { Loader2, Eye, AlertCircle } from "lucide-react";
 import JSZip from "jszip";
+import { getTokenInfo } from "@/types/token"; // Import the helper function
 
 interface ViewerProps {
   protectedDataAddress?: string;
@@ -101,19 +102,28 @@ const PortfolioViewer: React.FC<ViewerProps> = ({ protectedDataAddress }) => {
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <h3 className="text-lg font-semibold mb-4">Portfolio Allocation</h3>
           <div className="space-y-4">
-            {portfolioData.allocations.map(
-              (allocation: { token: string; percentage: number }) => (
+            {portfolioData.allocations.map((allocation) => {
+              const tokenInfo = getTokenInfo(allocation.token);
+              return (
                 <div
                   key={allocation.token}
                   className="flex items-center justify-between"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                      <img
-                        src="/api/placeholder/24/24"
-                        alt={allocation.token}
-                        className="w-6 h-6"
-                      />
+                      {tokenInfo ? (
+                        <img
+                          src={tokenInfo.logo}
+                          alt={tokenInfo.name}
+                          className="w-6 h-6"
+                        />
+                      ) : (
+                        <img
+                          src="/api/placeholder/24/24"
+                          alt={allocation.token}
+                          className="w-6 h-6"
+                        />
+                      )}
                     </div>
                     <span className="font-medium">{allocation.token}</span>
                   </div>
@@ -121,8 +131,8 @@ const PortfolioViewer: React.FC<ViewerProps> = ({ protectedDataAddress }) => {
                     {allocation.percentage}%
                   </span>
                 </div>
-              )
-            )}
+              );
+            })}
           </div>
         </div>
 

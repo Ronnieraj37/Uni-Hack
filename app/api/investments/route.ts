@@ -1,16 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import {
-  createInvestment,
-  getAllInvestments,
-  getInvestmentByAddress,
-} from "@/lib/db";
+import { createInvestment, getAllInvestments } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
 // Create new investment
 export async function POST(req: NextRequest) {
   try {
     const user = await auth(req);
+    console.log("Authenticated user:", user);
 
     if (!user) {
       console.log("Auth failed - no user");
@@ -28,63 +25,73 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const {
-      protectedDataAddress,
-      collectionId,
-      name,
-      description,
-      price,
-      tokenAllocations,
-    } = await req.json();
+    const body = await req.json();
+    console.log("Received request body:", body);
 
-    // Validate required fields
-    if (!protectedDataAddress || !collectionId || !name) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    const { protectedDataAddress, collectionId, name, description, price } =
+      body;
 
-    const investment = await createInvestment({
+    // Log all inputs
+    console.log("Processing investment creation with:", {
       protectedDataAddress,
       collectionId,
       name,
       description,
       price,
       creatorId: user.id,
-      tokenAllocations,
     });
 
-    return NextResponse.json({
-      status: "SUCCESS",
-      investment,
-    });
+    // Validate required fields
+    if (!protectedDataAddress || !collectionId || !name) {
+      console.log("Missing required fields");
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const investment = await createInvestment({
+        protectedDataAddress,
+        collectionId: collectionId.toString(),
+        name,
+        description,
+        price,
+        creatorId: user.id,
+      });
+
+      console.log("Investment created successfully:", investment);
+
+      return NextResponse.json({
+        status: "SUCCESS",
+        investment,
+      });
+    } catch (dbError) {
+      console.error("Database error during investment creation:", dbError);
+      return NextResponse.json(
+        { error: "Database error: " + (dbError as Error).message },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Investment creation error:", error);
     return NextResponse.json(
-      { error: "Failed to create investment" },
+      { error: "Failed to create investment: " + (error as Error).message },
       { status: 500 }
     );
   }
 }
 
 // Get all investments
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const user = await auth(req);
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const investments = await getAllInvestments();
 
     return NextResponse.json({
       status: "SUCCESS",
       investments,
     });
-  } catch (error) {
-    console.error("Investment fetch error:", error);
+  } catch {
     return NextResponse.json(
       { error: "Failed to fetch investments" },
       { status: 500 }

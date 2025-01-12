@@ -1,6 +1,4 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useAccount } from "wagmi";
 import Link from "next/link";
 import {
   AreaChart,
@@ -16,11 +14,8 @@ import {
 } from "recharts";
 import {
   Search,
-  LineChart,
   ArrowUpRight,
   ArrowDownRight,
-  LayoutDashboard,
-  Settings,
   UserCircle,
   PlusCircle,
   ShoppingBag,
@@ -48,36 +43,8 @@ const pieData = tokenBalances.map((token) => ({
 
 const COLORS = ["#6366F1", "#F59E0B", "#10B981"];
 
-const Dashboard = () => {
-  const { address, isConnected } = useAccount();
-  const [userType, setUserType] = useState<"investor" | "user" | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const checkUserType = async () => {
-      try {
-        const response = await fetch("/api/auth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address }),
-        });
-
-        const data = await response.json();
-
-        if (data.status === "AUTHENTICATED") {
-          setUserType(data.user.role.toLowerCase());
-        }
-      } catch (error) {
-        console.error("Failed to fetch user type:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkUserType();
-  }, [address, isConnected]);
-
-  if (isLoading || !userType) {
+const Dashboard = ({ userType }: { userType: "investor" | "user" | null }) => {
+  if (!userType) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

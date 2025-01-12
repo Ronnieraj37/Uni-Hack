@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createUser, getUserByAddress } from "@/lib/db";
 
+function normalizeAddress(address: string): string {
+  return address?.toLowerCase();
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -19,6 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already exists
+    console.log("HEre", address);
     const existingUser = await getUserByAddress(address);
     if (existingUser) {
       return NextResponse.json(
@@ -31,7 +36,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Create new user
-    const user = await createUser(address, role, email, name);
+    const normAddress = normalizeAddress(address);
+    const user = await createUser(normAddress, role, email, name);
 
     return NextResponse.json({
       status: "SUCCESS",

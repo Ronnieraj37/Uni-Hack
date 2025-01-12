@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
-import { Wallet, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import React from "react";
 
 const LoginPage = () => {
@@ -10,12 +10,13 @@ const LoginPage = () => {
   const router = useRouter();
   const [userType, setUserType] = useState<"INVESTOR" | "USER" | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isChecking, setIsChecking] = useState(true); // New state for initial check
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
 
   const handleRegistration = async () => {
-    if (!address || !userType) return;
+    if (!address || !userType || !name) return;
 
     try {
       setIsRegistering(true);
@@ -35,18 +36,7 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (data.status === "SUCCESS") {
-        // After successful registration, check auth status
-        const authResponse = await fetch("/api/auth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address }),
-        });
-
-        const authData = await authResponse.json();
-
-        if (authData.status === "AUTHENTICATED") {
-          router.push("/dashboard");
-        }
+        router.push("/dashboard");
       } else {
         setError(data.error || "Registration failed");
       }
@@ -59,32 +49,50 @@ const LoginPage = () => {
   };
 
   const checkExistingUser = async () => {
-    if (!address) return;
+    if (!window.ethereum?.selectedAddress) return;
 
     try {
+      setIsChecking(true);
+
       const response = await fetch("/api/auth", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          address,
+          address: window.ethereum.selectedAddress,
         }),
       });
 
       const data = await response.json();
 
       if (data.status === "AUTHENTICATED") {
-        router.push("/");
+        router.replace("/dashboard");
       }
     } catch (error) {
       console.error("Auth check failed:", error);
+      setError("Authentication failed. Please try again.");
+    } finally {
+      setIsChecking(false);
     }
   };
 
+  // Run check when component mounts and when wallet connects
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && window.ethereum?.selectedAddress) {
       checkExistingUser();
+    } else {
+      setIsChecking(false);
     }
-  }, [isConnected, address]);
+  }, [isConnected]); // Only depend on isConnected
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
@@ -118,7 +126,7 @@ const LoginPage = () => {
               Continue as User
             </button>
           </div>
-        ) : (
+        ) : userType ? (
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -159,7 +167,7 @@ const LoginPage = () => {
               )}
             </button>
           </div>
-        )}
+        ) : null}
 
         {isConnected && (
           <div className="text-center text-sm text-gray-500">

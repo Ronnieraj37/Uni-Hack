@@ -2,32 +2,36 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getUserByAddress } from "@/lib/db";
 
+function normalizeAddress(address: string): string {
+  return address?.toLowerCase();
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const { address } = body;
 
-    if (!body || !body.address) {
+    if (!address) {
       return NextResponse.json(
         {
           status: "ERROR",
-          error: "Missing address",
+          error: "Invalid address",
         },
         { status: 400 }
       );
     }
 
-    const { address } = body;
-
-    // Check if user exists
-    const user = await getUserByAddress(address);
-
+    const normalizedAddress = normalizeAddress(address);
+    const user = await getUserByAddress(normalizedAddress);
     if (!user) {
       return NextResponse.json(
         {
           status: "REGISTRATION_REQUIRED",
-          address,
+          address: normalizedAddress,
         },
-        { status: 200 }
+        {
+          status: 200,
+        }
       );
     }
 

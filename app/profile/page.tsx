@@ -1,7 +1,15 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { User, Wallet, ChevronRight, Shield, Settings } from "lucide-react";
+import {
+  User,
+  Wallet,
+  ChevronRight,
+  Shield,
+  Settings,
+  House,
+} from "lucide-react";
 import PortfolioViewer from "../components/PortfolioViewer";
+import Link from "next/link";
 
 interface Portfolio {
   address: string;
@@ -22,17 +30,17 @@ const ProfilePage = () => {
       {
         address: "0x481F130001B70ffe7cE6e763e6b8FCFaacFd8C8d",
         name: "Investment Portfolio",
-        createdAt: "10/01/2025",
+        createdAt: "2024-01-12 04:21:50.013",
       },
       {
-        address: "0x456...def",
-        name: "Aggressive Growth Portfolio",
-        createdAt: "2024-01-09T15:30:00Z",
+        address: "0x9F644d8A23a712ad4EEE70e389c49604ee81a6a3",
+        name: "R-Investment 12th Jan",
+        createdAt: "2025-01-12 10:56:50.013",
       },
       {
         address: "0x789...ghi",
         name: "Balanced Portfolio",
-        createdAt: "2024-01-08T09:15:00Z",
+        createdAt: "2024-01-08 09:04:50.013",
       },
     ];
   };
@@ -59,6 +67,11 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Link href={"/dashboard"}>
+        <button>
+          <House />
+        </button>
+      </Link>
       {/* Profile Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">

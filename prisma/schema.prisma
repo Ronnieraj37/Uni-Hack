@@ -33,36 +33,23 @@ model User {
 }
 
 model Investment {
-  id              String    @id @default(cuid())
+  id                  String    @id @default(cuid())
   protectedDataAddress String    @unique  // iExec protected data address
-  collectionId    String    // iExec collection ID
-  name            String
-  description     String?
-  price           Float
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  // Token allocations in the investment strategy
-  tokenAllocations TokenAllocation[]
+  collectionId        String    // iExec collection ID
+  name                String
+  description         String?
+  price               Float
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   // Creator (investor)
-  creatorId       String
-  creator         User      @relation("CreatedInvestments", fields: [creatorId], references: [id])
+  creatorId           String
+  creator             User      @relation("CreatedInvestments", fields: [creatorId], references: [id])
 
   // Purchases
-  purchases       InvestmentPurchase[]
+  purchases           InvestmentPurchase[]
 
   @@index([protectedDataAddress])
-}
-
-model TokenAllocation {
-  id            String     @id @default(cuid())
-  investmentId  String
-  investment    Investment @relation(fields: [investmentId], references: [id])
-  token         String     // Token symbol (e.g., "ETH", "BTC")
-  percentage    Float      // Allocation percentage
-  
-  @@unique([investmentId, token])
 }
 
 model InvestmentPurchase {

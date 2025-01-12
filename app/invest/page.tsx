@@ -8,30 +8,23 @@ import {
   ChevronLeft,
   Search,
   Check,
+  House,
 } from "lucide-react";
 
-interface Token {
-  symbol: string;
-  name: string;
-  logo: string;
-  network?: string;
-}
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { getTokenInfo, tokens } from "@/types/token";
+import Link from "next/link";
 
 interface SelectedToken {
   symbol: string;
   percentage: number;
 }
-
-const tokens: Token[] = [
-  { symbol: "ETH", name: "Ethereum", logo: "/eth-logo.png" },
-  { symbol: "USDC", name: "USD Coin", logo: "/usdc-logo.png" },
-  { symbol: "LINK", name: "Chainlink", logo: "/link-logo.png" },
-  { symbol: "WBTC", name: "Wrapped Bitcoin", logo: "/wbtc-logo.png" },
-  { symbol: "AAVE", name: "Aave", logo: "/aave-logo.png" },
-  { symbol: "UNI", name: "Uniswap", logo: "/uni-logo.png" },
-  { symbol: "MATIC", name: "Polygon", logo: "/matic-logo.png" },
-  { symbol: "DAI", name: "Dai", logo: "/dai-logo.png" },
-];
 
 const PortfolioProtector: React.FC = () => {
   const [step, setStep] = useState<1 | 2>(1);
@@ -41,6 +34,8 @@ const PortfolioProtector: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [protectedDataAddress, setProtectedDataAddress] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [investmentTitle, setInvestmentTitle] = useState("");
+  const [investmentDescription, setInvestmentDescription] = useState("");
 
   const totalAllocation = allocations.reduce(
     (sum, token) => sum + token.percentage,
@@ -93,10 +88,6 @@ const PortfolioProtector: React.FC = () => {
         })),
       };
 
-      // Create collection
-      const collection =
-        await iExecDataProtectorClient.sharing.createCollection();
-      console.log("Collection created", collection);
       // Protect the data
       const protectedDataResponse =
         await iExecDataProtectorClient.core.protectData({
@@ -108,15 +99,17 @@ const PortfolioProtector: React.FC = () => {
           name: `Investment Portfolio - ${new Date().toLocaleDateString()}`,
         });
       console.log("Protected data", protectedDataResponse);
+
       // Add to collection
       await iExecDataProtectorClient.sharing.addToCollection({
         protectedData: protectedDataResponse.address,
-        collectionId: collection.collectionId,
+        collectionId: 451,
         addOnlyAppWhitelist:
           process.env
             .NEXT_PUBLIC_VITE_PROTECTED_DATA_DELIVERY_WHITELIST_ADDRESS!,
       });
       console.log("Added to collection");
+
       // Setup for renting
       await iExecDataProtectorClient.sharing.setProtectedDataToRenting({
         protectedData: protectedDataResponse.address,
@@ -132,45 +125,37 @@ const PortfolioProtector: React.FC = () => {
       });
       console.log("Rented data at 0 initially");
 
-      // Inside protectPortfolio function, when saving to database
+      // Save to database without token allocations
       const saveInvestmentResponse = await fetch("/api/investments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "wallet-address": window.ethereum.selectedAddress, // Add wallet address
+          "wallet-address": window.ethereum.selectedAddress,
         },
         body: JSON.stringify({
           protectedDataAddress: protectedDataResponse.address,
-          collectionId: collection.collectionId,
-          name: `Investment Portfolio - ${new Date().toLocaleDateString()}`,
-          description: "Portfolio Strategy",
+          collectionId: 451, // Using fixed collection ID
+          name: investmentTitle,
+          description: investmentDescription,
           price: 0,
-          tokenAllocations: allocations.map(({ symbol, percentage }) => ({
-            token: symbol,
-            percentage,
-          })),
         }),
       });
 
-      const dbResponse = await saveInvestmentResponse.json();
-
-      // In protectPortfolio function, update the error handling
       if (!saveInvestmentResponse.ok) {
+        // Get the actual error message from response
         const errorData = await saveInvestmentResponse.json();
-        console.error("API Error:", errorData);
+        console.error("API Error Details:", errorData);
         throw new Error(errorData.error || "Failed to save investment");
       }
 
-      console.log(
-        "Protected data set to renting",
-        protectedDataResponse.address
-      );
+      const successData = await saveInvestmentResponse.json();
+      console.log("Success response:", successData);
 
       setProtectedDataAddress(protectedDataResponse.address);
 
       return {
         address: protectedDataResponse.address,
-        collectionId: collection.collectionId.toString(),
+        collectionId: "451",
       };
     } catch (err) {
       setError(
@@ -181,8 +166,48 @@ const PortfolioProtector: React.FC = () => {
     }
   };
 
+  const renderInvestmentDetails = () => (
+    <Card className="mb-8">
+      <CardHeader>
+        <CardTitle className="text-xl font-bold">Investment Details</CardTitle>
+        <CardDescription>Define your portfolio strategy</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Investment Title *
+          </label>
+          <input
+            type="text"
+            value={investmentTitle}
+            onChange={(e) => setInvestmentTitle(e.target.value)}
+            placeholder="E.g., Conservative Growth Portfolio"
+            className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            value={investmentDescription}
+            onChange={(e) => setInvestmentDescription(e.target.value)}
+            placeholder="Describe your investment strategy..."
+            rows={4}
+            className="w-full p-4 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-4 sm:p-6 lg:p-8">
+      <Link href={"/dashboard"}>
+        <button>
+          <House />
+        </button>
+      </Link>
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden backdrop-blur-lg backdrop-filter">
           {/* Progress Bar */}
@@ -198,13 +223,13 @@ const PortfolioProtector: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
               <div className="flex-1">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  {step === 1 ? "Select Tokens" : "Set Allocations"}
+                  {step === 1 ? "Select Tokens" : "Configure Portfolio"}
                 </h1>
                 <p className="text-gray-600 mt-2">
                   Step {step} of 2:{" "}
                   {step === 1
                     ? "Choose tokens for your portfolio"
-                    : "Define percentage allocations"}
+                    : "Set allocations and details"}
                 </p>
               </div>
 
@@ -241,7 +266,7 @@ const PortfolioProtector: React.FC = () => {
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 rounded-full bg-gray-100 p-2 flex items-center justify-center">
                           <img
-                            src="/api/placeholder/32/32"
+                            src={token.logo}
                             alt={token.name}
                             className="w-8 h-8"
                           />
@@ -274,55 +299,75 @@ const PortfolioProtector: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {allocations.map((token) => (
-                  <div
-                    key={token.symbol}
-                    className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200"
-                  >
-                    <div className="flex items-center space-x-3 w-48">
-                      <div className="w-12 h-12 rounded-full bg-white p-2 flex items-center justify-center shadow-sm">
-                        <img
-                          src="/api/placeholder/32/32"
-                          alt={token.symbol}
-                          className="w-8 h-8"
-                        />
-                      </div>
-                      <span className="font-semibold text-lg">
-                        {token.symbol}
-                      </span>
-                    </div>
-                    <div className="flex-1 w-full sm:w-auto">
-                      <div className="relative">
-                        <input
-                          type="number"
-                          value={token.percentage}
-                          onChange={(e) =>
-                            updateAllocation(
-                              token.symbol,
-                              Number(e.target.value)
-                            )
-                          }
-                          className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                          placeholder="Enter percentage"
-                        />
-                        <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-                          %
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-24 text-right">
-                      <span
-                        className={`text-lg font-semibold ${
-                          token.percentage > 0
-                            ? "text-blue-600"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {token.percentage}%
-                      </span>
-                    </div>
+                {renderInvestmentDetails()}
+
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                    Token Allocations
+                  </h3>
+                  <div className="space-y-4">
+                    {allocations.map((token) => {
+                      const tokenInfo = getTokenInfo(token.symbol);
+                      return (
+                        <div
+                          key={token.symbol}
+                          className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-6 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-200"
+                        >
+                          <div className="flex items-center space-x-3 w-48">
+                            <div className="w-12 h-12 rounded-full bg-white p-2 flex items-center justify-center shadow-sm">
+                              {tokenInfo ? (
+                                <img
+                                  src={tokenInfo.logo}
+                                  alt={tokenInfo.name}
+                                  className="w-8 h-8"
+                                />
+                              ) : (
+                                <img
+                                  src="/api/placeholder/32/32"
+                                  alt={token.symbol}
+                                  className="w-8 h-8"
+                                />
+                              )}
+                            </div>
+                            <span className="font-semibold text-lg">
+                              {token.symbol}
+                            </span>
+                          </div>
+                          <div className="flex-1 w-full sm:w-auto">
+                            <div className="relative">
+                              <input
+                                type="number"
+                                value={token.percentage}
+                                onChange={(e) =>
+                                  updateAllocation(
+                                    token.symbol,
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                                placeholder="Enter percentage"
+                              />
+                              <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                %
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-24 text-right">
+                            <span
+                              className={`text-lg font-semibold ${
+                                token.percentage > 0
+                                  ? "text-blue-600"
+                                  : "text-gray-400"
+                              }`}
+                            >
+                              {token.percentage}%
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                </div>
 
                 <div className="flex items-center justify-between p-6 bg-blue-50 rounded-xl">
                   <span className="font-semibold text-lg">
