@@ -1,53 +1,39 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("POSTGRES_PRISMA_URL")
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-enum UserRole {
-  INVESTOR
-  USER
-}
-
 model User {
-  id            String       @id @default(cuid())
-  address       String       @unique // Wallet address
-  email         String?      @unique
-  name          String?
-  role          UserRole
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-
-  // Relationships
-  createdInvestments Investment[] @relation("CreatedInvestments")
+  id                 String               @id @default(cuid())
+  address            String               @unique
+  email              String?              @unique
+  name               String?
+  role               UserRole
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  createdInvestments Investment[]         @relation("CreatedInvestments")
   boughtInvestments  InvestmentPurchase[]
-  
+
   @@index([address])
 }
 
 model Investment {
-  id                  String    @id @default(cuid())
-  protectedDataAddress String    @unique  // iExec protected data address
-  collectionId        String    // iExec collection ID
-  name                String
-  description         String?
-  price               Float
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-
-  // Creator (investor)
-  creatorId           String
-  creator             User      @relation("CreatedInvestments", fields: [creatorId], references: [id])
-
-  // Purchases
-  purchases           InvestmentPurchase[]
+  id                   String               @id @default(cuid())
+  protectedDataAddress String               @unique
+  collectionId         String
+  name                 String
+  description          String?
+  price                Float
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  creatorId            String
+  creator              User                 @relation("CreatedInvestments", fields: [creatorId], references: [id])
+  purchases            InvestmentPurchase[]
 
   @@index([protectedDataAddress])
 }
@@ -55,25 +41,29 @@ model Investment {
 model InvestmentPurchase {
   id            String     @id @default(cuid())
   investmentId  String
-  investment    Investment @relation(fields: [investmentId], references: [id])
   userId        String
-  user          User       @relation(fields: [userId], references: [id])
   purchasedAt   DateTime   @default(now())
   purchasePrice Float
-  
+  investment    Investment @relation(fields: [investmentId], references: [id])
+  user          User       @relation(fields: [userId], references: [id])
+
   @@unique([userId, investmentId])
   @@index([userId])
   @@index([investmentId])
 }
 
-// Optional: Track transaction hashes
 model Transaction {
-  id            String   @id @default(cuid())
-  txHash        String   @unique
-  type          String   // e.g., "CREATE_INVESTMENT", "PURCHASE_INVESTMENT"
-  status        String   // e.g., "PENDING", "COMPLETED", "FAILED"
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        String   @id @default(cuid())
+  txHash    String   @unique
+  type      String
+  status    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([txHash])
+}
+
+enum UserRole {
+  INVESTOR
+  USER
 }
