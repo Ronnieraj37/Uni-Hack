@@ -138,7 +138,7 @@ Rename the env.example file to .env and fill the required variables.
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/dapp-finance.git
+git clone https://github.com/Ronnieraj37/Uni-Hack
 
 # Install dependencies
 npm install
