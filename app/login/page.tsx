@@ -98,7 +98,9 @@ const LoginPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-lg">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Welcome to DAPP</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Welcome to TradeXchange
+          </h2>
           <p className="mt-2 text-gray-600">
             Connect your wallet to get started
           </p>

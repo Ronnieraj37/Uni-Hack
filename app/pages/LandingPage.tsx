@@ -62,7 +62,7 @@ const Dashboard = ({ userType }: { userType: "investor" | "user" | null }) => {
                 <div className="flex-shrink-0">
                   <div className="h-8 w-8 bg-blue-600 rounded-full"></div>
                 </div>
-                <div className="mx-4 font-semibold text-xl">DAPP Finance</div>
+                <div className="mx-4 font-semibold text-xl">TradeXchange</div>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="relative">
